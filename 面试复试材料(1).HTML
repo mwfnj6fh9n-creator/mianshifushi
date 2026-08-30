@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>南京航空航天大学 MBA 申请系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Microsoft YaHei', Arial, sans-serif; }
+        body { background-color: #f0f2f5; color: #333; }
+
+        /* 顶部导航 */
+        header { background-color: #164a84; color: white; height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 40px; }
+        .logo-area { display: flex; align-items: center; gap: 10px; }
+        
+        /* 校徽框 280px * 50px，隐藏长方形方框 */
+        .logo-upload-box {
+            width: 280px; height: 50px;
+            background: transparent; border: 1px solid transparent;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden; cursor: pointer; position: relative;
+        }
+        .logo-upload-box img { width: 100%; height: 100%; object-fit: cover; }
+
+        .logo-text { font-size: 18px; font-weight: bold; outline: none; cursor: text; border-bottom: 1px dashed transparent; }
+        .logo-text:focus { border-bottom: 1px dashed #fff; }
+
+        nav ul { list-style: none; display: flex; gap: 30px; }
+        nav ul li a { text-decoration: none; color: #fff; font-size: 15px; cursor: pointer; }
+        nav ul li a.active { font-weight: bold; border-bottom: 2px solid #fff; padding-bottom: 2px; }
+
+        /* 主体容器 */
+        .container { max-width: 1200px; margin: 30px auto; display: flex; gap: 20px; }
+
+        /* 左侧栏 */
+        .sidebar { width: 280px; flex-shrink: 0; }
+        .card { background: #fff; border-radius: 6px; border: 1px solid #e0e0e0; margin-bottom: 20px; padding: 20px; }
+        .section-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; padding-left: 10px; border-left: 4px solid #164a84; line-height: 20px; }
+
+        /* 进度列表 */
+        .step-list { list-style: none; padding-left: 10px; }
+        .step-item { margin-bottom: 15px; position: relative; padding-left: 25px; }
+        
+        /* 基础状态点样式 */
+        .step-item::before { position: absolute; left: 0; top: 2px; width: 14px; height: 14px; content: ''; border: 2px solid #ccc; border-radius: 50%; box-sizing: border-box; line-height: 14px; text-align: center; }
+        
+        /* 打钩圆圈（加粗，对齐） */
+        .step-item.completed-pass::before { border: 3px solid green; background: transparent; content: '✓'; color: green; font-size: 12px; font-weight: bold; }
+        
+        /* 只有圆圈 */
+        .step-item.completed-wait::before { border: 3px solid orange; }
+        
+        /* 打叉圆圈（对齐） */
+        .step-item.completed-fail::before { border: 3px solid red; background: transparent; content: '×'; color: red; font-size: 12px; font-weight: bold; }
+
+        /* 下拉选项统一灰色加粗字体 */
+        select.status-select {
+            display: block; margin-top: 4px; font-size: 12px; border: none;
+            background: transparent; outline: none; cursor: pointer; padding: 0;
+            appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            font-family: inherit; color: #888; font-weight: bold;
+        }
+        select.status-select option { font-size: 12px; color: #888; font-weight: bold; }
+
+        /* 上传申请材料下方的已提交样式 */
+        .upload-status { display: block; margin-top: 4px; font-size: 12px; font-weight: bold; color: #164a84; }
+
+        .contact-info p { font-size: 14px; color: #555; margin-bottom: 8px; line-height: 1.6; }
+        .contact-info span { contenteditable: true; border-bottom: 1px dashed transparent; cursor: text; }
+        .contact-info span:focus { border-bottom: 1px dashed #164a84; background: #f0f8ff; }
+
+        /* 右侧主内容区 */
+        .main-content { flex: 1; }
+        .card-main { background: #fff; border-radius: 6px; border: 1px solid #e0e0e0; margin-bottom: 20px; padding: 25px; }
+
+        /* 个人用户信息卡片 */
+        .user-info { display: flex; gap: 20px; align-items: flex-start; }
+        .avatar { width: 90px; height: 110px; background-color: #ddd; display: flex; justify-content: center; align-items: center; cursor: pointer; position: relative; overflow: hidden; }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar-hint { font-size: 12px; color: #999; text-align: center; margin-top: 5px; cursor: pointer; }
+
+        .info-details div { margin-bottom: 10px; color: #555; font-size: 14px; }
+        .info-details span { display: inline-block; width: 80px; color: #000; font-weight: bold; }
+        .editable { display: inline-block; min-width: 100px; border-bottom: 1px dashed transparent; outline: none; cursor: text; color: #555; font-weight: normal; }
+        .editable:focus { background: #f0f8ff; border-bottom: 1px dashed #164a84; }
+
+        /* 申请信息 */
+        .title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .preview-link { color: #164a84; font-size: 14px; text-decoration: none; cursor: pointer; }
+        .result-box { padding: 40px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px; margin: 20px 0; }
+        
+        /* 修改：申请信息大圆圈改为蓝底白钩，并置于上方 */
+        .result-icon { width: 50px; height: 50px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="50" height="50"><circle cx="12" cy="12" r="11" fill="%232c8af8"/><path d="M8 11.5 L11 14.5 L16 9.5" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>') no-repeat center/contain; }
+        .result-text { font-size: 26px; color: #2c8af8; font-weight: bold; }
+
+        /* 推荐信表格 */
+        .rec-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .rec-table th { background-color: #f8f9fa; border-bottom: 1px solid #e0e0e0; padding: 12px; font-size: 14px; color: #555; font-weight: bold; }
+        .rec-table td { border-bottom: 1px solid #e0e0e0; padding: 12px; font-size: 14px; color: #666; }
+
+        /* 隐藏方框（下拉/输入框） */
+        select.no-border, .no-border-input {
+            border: none; background: transparent; appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            font-weight: bold; cursor: pointer; padding: 0; font-size: 14px; outline: none;
+        }
+        .no-border-input { width: 100%; color: #333; }
+
+        /* 浅色底背景填充类 */
+        select.fill-light-green { background-color: #A5D6A7; color: white; border-radius: 4px; padding: 2px 5px; }
+        select.fill-light-yellow { background-color: #FFF59D; color: black; border-radius: 4px; padding: 2px 5px; }
+        select.fill-light-red { background-color: #EF9A9A; color: white; border-radius: 4px; padding: 2px 5px; }
+        select.fill-transparent { background-color: transparent; color: #333; }
+
+        /* 弹窗样式 */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal { background: #fff; border-radius: 8px; padding: 20px; width: 90%; max-width: 600px; position: relative; }
+        .modal.large { max-width: 800px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+        .modal-title { font-size: 18px; font-weight: bold; color: #164a84; }
+        .close-btn { font-size: 24px; cursor: pointer; color: #999; }
+        .close-btn:hover { color: #333; }
+        .modal-content { font-size: 16px; line-height: 1.6; color: #333; }
+        .modal-content[contenteditable="true"] { border: 1px dashed #ccc; padding: 10px; outline: none; }
+        .preview-modal .modal-content { font-size: 14px; line-height: 2; }
+
+        /* 进度详情弹窗样式：从左往右排列 */
+        .progress-modal-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .progress-step {
+            flex: 1;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: #555;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        .progress-step:first-child { border-left: 4px solid #164a84; color: #164a84; }
+        .progress-arrow { font-size: 20px; color: #ccc; }
+
+        /* 推荐信修改弹窗内部样式 */
+        .rec-modal-row { margin-bottom: 15px; }
+        .rec-modal-row label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .rec-modal-row input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .rec-modal-btn { background-color: #164a84; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+        .rec-modal-btn:hover { background-color: #0f3561; }
+    </style>
+</head>
+<body>
+
+    <!-- 隐藏的文件输入框 -->
+    <input type="file" id="logoUploader" accept="image/jpeg" style="display: none;">
+    <input type="file" id="avatarUploader" accept="image/jpeg" style="display: none;">
+
+    <header>
+        <div class="logo-area">
+            <!-- 点击替换校徽（隐藏方框，280*50） -->
+            <div class="logo-upload-box" onclick="document.getElementById('logoUploader').click()">
+                <img id="logoPreview" src="" alt="校徽" style="display:none;">
+                <span id="logoPlaceholder" style="color:#164a84; font-size:16px;">校徽</span>
+            </div>
+            <div class="logo-text" contenteditable="true">南京航空航天大学</div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#" class="active">首页</a></li>
+                <li><a href="#" onclick="openModal('noticeModal')">填报须知</a></li>
+                <li><a href="#" onclick="openPreviewModal()">预览</a></li>
+                <li><a href="#" onclick="openModal('announcementModal')">公告</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <!-- 左侧栏 -->
+        <aside class="sidebar">
+            <div class="card">
+                <div class="section-title">申请进度</div>
+                <ul class="step-list">
+                    <li class="step-item completed-pass">上传申请材料
+                        <span class="upload-status">已提交</span>
+                    </li>
+                    
+                    <li class="step-item" id="materialStep">材料审核
+                        <select class="status-select" id="materialSelect" onchange="updateMaterialStatus(this.value)">
+                            <option value="pass" selected>通过</option>
+                            <option value="wait">进行中</option>
+                            <option value="fail">未通过</option>
+                        </select>
+                    </li>
+                    
+                    <li class="step-item" id="interviewStep">面试资格
+                        <select class="status-select" id="interviewSelect" onchange="updateInterviewStatus(this.value)">
+                            <option value="pass" selected>通过</option>
+                            <option value="wait">进行中</option>
+                            <option value="fail">未通过</option>
+                        </select>
+                    </li>
+                    
+                    <!-- 面试结果：统一灰色加粗 -->
+                    <li class="step-item completed-pass">面试结果
+                        <select class="status-select" id="resultSelect" onchange="updateResult(this.value)">
+                            <option value="优秀" selected>优秀</option>
+                            <option value="良好">良好</option>
+                            <option value="普通">普通</option>
+                            <option value="未知">未知</option>
+                        </select>
+                    </li>
+                    
+                    <li class="step-item" id="admissionStep">录取结果
+                        <select class="status-select" id="admissionSelect" onchange="updateAdmissionStatus(this.value)">
+                            <option value="none" selected>未开始</option>
+                            <option value="wait">录取中</option>
+                            <option value="pass">已录取</option>
+                            <option value="fail">未录取</option>
+                        </select>
+                    </li>
+                </ul>
+                <!-- 点击查看进度详情，弹出横向窗口 -->
+                <div style="text-align: center; margin-top: 10px; font-size: 14px; color: #164a84; cursor: pointer;" onclick="openModal('progressModal')">查看进度详情</div>
+            </div>
+
+            <div class="card">
+                <div class="section-title">联系我们</div>
+                <div class="contact-info">
+                    <p>电话：<span contenteditable="true">025-84896699</span></p>
+                    <p>邮箱：<span contenteditable="true">mba@nuaa.edu.cn</span></p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 右侧主内容区 -->
+        <section class="main-content">
+            <div class="card-main">
+                <div class="user-info">
+                    <div>
+                        <div class="avatar" onclick="document.getElementById('avatarUploader').click()">
+                            <img id="avatarPreview" src="" alt="头像" style="display:none;">
+                            <span id="avatarPlaceholder" style="color:#999;">[头像]</span>
+                        </div>
+                        <div class="avatar-hint">点击头像，进行编辑</div>
+                    </div>
+                    <div class="info-details">
+                        <div><span>尊敬的：</span><span class="editable" id="userName" contenteditable="true"></span></div>
+                        <div><span>报考批次：</span><span class="editable" id="batch" contenteditable="true"></span></div>
+                        <div><span>报名号：</span><span class="editable" id="regNo" contenteditable="true"></span></div>
+                        <div><span>手机号：</span><span class="editable" id="mobile" contenteditable="true"></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-main">
+                <div class="title-row">
+                    <div class="section-title" style="border-left: 4px solid #164a84; margin-bottom: 0;">申请信息</div>
+                    <a href="#" class="preview-link" onclick="event.preventDefault(); openPreviewModal();">预览</a>
+                </div>
+                
+                <!-- 申请信息：蓝底白钩大圆圈在上，下为文字 -->
+                <div class="result-box">
+                    <div class="result-icon"></div>
+                    <div class="result-text" id="resultDisplay">面试结果：优秀</div>
+                </div>
+            </div>
+
+            <div class="card-main">
+                <div class="section-title">推荐信信息</div>
+                <table class="rec-table">
+                    <thead>
+                        <tr>
+                            <th>推荐人</th>
+                            <th>推荐人邮箱</th>
+                            <th>邀请邮件状态</th>
+                            <th>推荐信值状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span id="recNameCell" contenteditable="true">***</span></td>
+                            
+                            <!-- 完美隐藏方框的邮箱输入框（支持下拉及手动输入） -->
+                            <td>
+                                <input list="email-suffixes" id="recEmailCell" class="no-border-input" value="@qq.com" onchange="updateSuffix(this)">
+                                <datalist id="email-suffixes">
+                                    <option value="@qq.com">
+                                    <option value="@163.com">
+                                    <option value="@126.com">
+                                    <option value="@yeah.net">
+                                </datalist>
+                            </td>
+                            
+                            <!-- 邀请邮件状态（浅色底） -->
+                            <td>
+                                <select class="no-border fill-transparent" id="inviteStatus" onchange="updateInviteStatus(this)">
+                                    <option value="未知" selected>未知</option>
+                                    <option value="接受">接受</option>
+                                    <option value="暂定">暂定</option>
+                                    <option value="拒接">拒接</option>
+                                </select>
+                            </td>
+                            
+                            <!-- 推荐信值状态（浅色底） -->
+                            <td>
+                                <select class="no-border fill-transparent" id="recValueStatus" onchange="updateRecValueStatus(this)">
+                                    <option value="未知" selected>未知</option>
+                                    <option value="已通过">已通过</option>
+                                    <option value="审核中">审核中</option>
+                                    <option value="未通过">未通过</option>
+                                </select>
+                            </td>
+                            
+                            <td><a href="#" class="operation-link" onclick="event.preventDefault(); openRecommendModal();">修改</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- 新增：进度详情弹窗（从左往右） -->
+    <div id="progressModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">进度详情</span>
+                <span class="close-btn" onclick="closeModal('progressModal')">&times;</span>
+            </div>
+            <div class="modal-content progress-modal-content">
+                <div class="progress-step">上传申请材料</div>
+                <div class="progress-arrow">→</div>
+                <div class="progress-step">材料审核</div>
+                <div class="progress-arrow">→</div>
+                <div class="progress-step">面试资格</div>
+                <div class="progress-arrow">→</div>
+                <div class="progress-step">面试结果</div>
+                <div class="progress-arrow">→</div>
+                <div class="progress-step">录取结果</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 填报须知弹窗 -->
+    <div id="noticeModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">填报须知</span>
+                <span class="close-btn" onclick="closeModal('noticeModal')">&times;</span>
+            </div>
+            <div class="modal-content" contenteditable="true">这里是填报须知内容，用户可点击这里手动修改。</div>
+        </div>
+    </div>
+
+    <!-- 预览弹窗 -->
+    <div id="previewModal" class="modal-overlay preview-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">预览信息</span>
+                <span class="close-btn" onclick="closeModal('previewModal')">&times;</span>
+            </div>
+            <div class="modal-content">
+                <div style="display:flex; align-items:center; gap:15px; margin-bottom: 15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                    <img id="previewAvatar" src="" style="width:90px; height:110px; object-fit: cover; background:#ddd; border-radius:4px;" alt="头像">
+                    <div>
+                        <div>尊敬的：<span id="previewName"></span></div>
+                        <div>报考批次：<span id="previewBatch"></span></div>
+                        <div>报名号：<span id="previewRegNo"></span></div>
+                        <div>手机号：<span id="previewMobile"></span></div>
+                    </div>
+                </div>
+                <div>申请信息：<span id="previewResult"></span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 公告弹窗 -->
+    <div id="announcementModal" class="modal-overlay">
+        <div class="modal large">
+            <div class="modal-header">
+                <span class="modal-title">公告</span>
+                <span class="close-btn" onclick="closeModal('announcementModal')">&times;</span>
+            </div>
+            <div class="modal-content" contenteditable="true">
+                <p>第一阶段，推免生进行注册、查询本人推免生资格及相关政策，填报个人资料信息，网上支付；</p>
+                <p>第二阶段，推免生填报志愿，接收并确认招生单位的复试及待录取通知；</p>
+                <p>第三阶段，推免生录取信息将在系统内进行公开。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 修改推荐人弹窗 -->
+    <div id="recommendModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">修改推荐人信息</span>
+                <span class="close-btn" onclick="closeModal('recommendModal')">&times;</span>
+            </div>
+            <div class="modal-content">
+                <div class="rec-modal-row">
+                    <label>推荐人</label>
+                    <input type="text" id="recNameInput">
+                </div>
+                <div class="rec-modal-row">
+                    <label>推荐人邮箱 (可输入完整邮箱或选择后缀)</label>
+                    <input type="text" id="recEmailInput" placeholder="如: zhangsan@163.com">
+                </div>
+                <button class="rec-modal-btn" onclick="saveRecommend()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 弹窗逻辑
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        // 预览弹窗数据同步
+        function openPreviewModal() {
+            const avatarImg = document.getElementById('avatarPreview');
+            const previewAvatar = document.getElementById('previewAvatar');
+            if (avatarImg.src) { previewAvatar.src = avatarImg.src; } else { previewAvatar.src = ""; }
+
+            document.getElementById('previewName').innerText = document.getElementById('userName').innerText;
+            document.getElementById('previewBatch').innerText = document.getElementById('batch').innerText;
+            document.getElementById('previewRegNo').innerText = document.getElementById('regNo').innerText;
+            document.getElementById('previewMobile').innerText = document.getElementById('mobile').innerText;
+            document.getElementById('previewResult').innerText = document.getElementById('resultDisplay').innerText;
+
+            openModal('previewModal');
+        }
+
+        // 左侧进度状态切换逻辑（灰色加粗，圆圈对齐）
+        function updateMaterialStatus(val) {
+            const step = document.getElementById('materialStep');
+            step.classList.remove('completed-pass', 'completed-wait', 'completed-fail');
+            const select = document.getElementById('materialSelect');
+            if (val === 'pass') { step.classList.add('completed-pass'); select.style.color = '#888'; }
+            else if (val === 'wait') { step.classList.add('completed-wait'); select.style.color = '#888'; }
+            else if (val === 'fail') { step.classList.add('completed-fail'); select.style.color = '#888'; }
+        }
+
+        function updateInterviewStatus(val) {
+            const step = document.getElementById('interviewStep');
+            step.classList.remove('completed-pass', 'completed-wait', 'completed-fail');
+            const select = document.getElementById('interviewSelect');
+            if (val === 'pass') { step.classList.add('completed-pass'); select.style.color = '#888'; }
+            else if (val === 'wait') { step.classList.add('completed-wait'); select.style.color = '#888'; }
+            else if (val === 'fail') { step.classList.add('completed-fail'); select.style.color = '#888'; }
+        }
+
+        function updateResult(val) {
+            document.getElementById('resultDisplay').innerText = '面试结果：' + val;
+            // 都保持灰色加粗，无需额外颜色修改
+        }
+
+        function updateAdmissionStatus(val) {
+            const step = document.getElementById('admissionStep');
+            step.classList.remove('completed-pass', 'completed-wait', 'completed-fail');
+            const select = document.getElementById('admissionSelect');
+            if (val === 'none') { step.classList.remove('completed-pass', 'completed-wait', 'completed-fail'); select.style.color = '#888'; }
+            else if (val === 'wait') { step.classList.add('completed-wait'); select.style.color = '#888'; }
+            else if (val === 'pass') { step.classList.add('completed-pass'); select.style.color = '#888'; }
+            else if (val === 'fail') { step.classList.add('completed-fail'); select.style.color = '#888'; }
+        }
+
+        // 推荐信（邀请邮件状态）浅色底逻辑
+        function updateInviteStatus(el) {
+            el.classList.remove('fill-light-green', 'fill-light-yellow', 'fill-light-red', 'fill-transparent');
+            if (el.value === '接受') { el.classList.add('fill-light-green'); }
+            else if (el.value === '暂定') { el.classList.add('fill-light-yellow'); }
+            else if (el.value === '拒接') { el.classList.add('fill-light-red'); }
+            else { el.classList.add('fill-transparent'); }
+        }
+
+        // 推荐信（推荐信值状态）浅色底逻辑
+        function updateRecValueStatus(el) {
+            el.classList.remove('fill-light-green', 'fill-light-yellow', 'fill-light-red', 'fill-transparent');
+            if (el.value === '已通过') { el.classList.add('fill-light-green'); }
+            else if (el.value === '审核中') { el.classList.add('fill-light-yellow'); }
+            else if (el.value === '未通过') { el.classList.add('fill-light-red'); }
+            else { el.classList.add('fill-transparent'); }
+        }
+
+        // 推荐信邮箱修改逻辑
+        function updateSuffix(el) {
+            // 保持样式不变
+        }
+
+        function openRecommendModal() {
+            document.getElementById('recNameInput').value = document.getElementById('recNameCell').innerText;
+            document.getElementById('recEmailInput').value = document.getElementById('recEmailCell').value;
+            openModal('recommendModal');
+        }
+
+        function saveRecommend() {
+            const name = document.getElementById('recNameInput').value;
+            const email = document.getElementById('recEmailInput').value;
+            
+            if (!name) { alert('请输入推荐人姓名'); return; }
+            if (!email) { alert('请输入推荐人邮箱'); return; }
+
+            document.getElementById('recNameCell').innerText = name;
+            document.getElementById('recEmailCell').value = email;
+
+            closeModal('recommendModal');
+        }
+
+        // 上传逻辑
+        document.getElementById('logoUploader').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    document.getElementById('logoPreview').src = event.target.result;
+                    document.getElementById('logoPreview').style.display = 'block';
+                    document.getElementById('logoPlaceholder').style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('avatarUploader').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    document.getElementById('avatarPreview').src = event.target.result;
+                    document.getElementById('avatarPreview').style.display = 'block';
+                    document.getElementById('avatarPlaceholder').style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // 初始设置
+        updateMaterialStatus('pass');
+        updateInterviewStatus('pass');
+        updateAdmissionStatus('none');
+        updateInviteStatus(document.getElementById('inviteStatus'));
+        updateRecValueStatus(document.getElementById('recValueStatus'));
+    </script>
+</body>
+</html>
